@@ -18,25 +18,33 @@ const CameraScreen = ({ onCapture, onBack }) => {
     useEffect(() => {
         if (videoRef.current) {
             const updateDimensions = () => {
-                setDimensions({
-                    width: videoRef.current.clientWidth,
-                    height: videoRef.current.clientHeight
-                });
-            };
-            window.addEventListener('resize', updateDimensions);
-            // Initial check
-            const interval = setInterval(() => {
-                if (videoRef.current && (videoRef.current.clientWidth !== dimensions.width)) {
-                    updateDimensions();
+                if (videoRef.current) {
+                    setDimensions({
+                        width: videoRef.current.clientWidth,
+                        height: videoRef.current.clientHeight
+                    });
                 }
-            }, 500);
+            };
+
+            // Update dimensions when video metadata is loaded
+            videoRef.current.addEventListener('loadedmetadata', updateDimensions);
+
+            // Also update on resize
+            window.addEventListener('resize', updateDimensions);
+
+            // Initial update in case metadata is already loaded
+            if (videoRef.current.readyState >= 1) {
+                updateDimensions();
+            }
 
             return () => {
+                if (videoRef.current) {
+                    videoRef.current.removeEventListener('loadedmetadata', updateDimensions);
+                }
                 window.removeEventListener('resize', updateDimensions);
-                clearInterval(interval);
             };
         }
-    }, [videoRef]);
+    }, [videoRef, stream]);
 
     useEffect(() => {
         if (countdown === null) return;
