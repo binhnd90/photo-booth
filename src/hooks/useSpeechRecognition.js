@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-export function useSpeechRecognition() {
+export function useSpeechRecognition(lang = 'vi-VN') {
   const [transcript, setTranscript] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
@@ -16,7 +16,7 @@ export function useSpeechRecognition() {
     }
 
     const r = new SR();
-    r.lang = 'vi-VN';
+    r.lang = lang;
     r.continuous = false;
     r.interimResults = true;
     r.maxAlternatives = 1;
@@ -26,16 +26,16 @@ export function useSpeechRecognition() {
       setError(null);
     };
 
-    r.onend = () => {
-      setIsListening(false);
-    };
+    r.onend = () => setIsListening(false);
 
     r.onerror = (e) => {
       setIsListening(false);
       if (e.error !== 'no-speech') {
-        setError(e.error === 'not-allowed'
-          ? 'Microphone access denied. Please allow microphone in browser settings.'
-          : `Error: ${e.error}`);
+        setError(
+          e.error === 'not-allowed'
+            ? 'Microphone access denied.'
+            : `Error: ${e.error}`
+        );
       }
     };
 
@@ -49,7 +49,7 @@ export function useSpeechRecognition() {
     };
 
     recognitionRef.current = r;
-  }, []);
+  }, [lang]);
 
   const startListening = useCallback(() => {
     transcriptRef.current = '';
@@ -58,7 +58,7 @@ export function useSpeechRecognition() {
     try {
       recognitionRef.current?.start();
     } catch {
-      // ignore already started error
+      // ignore "already started"
     }
   }, []);
 
@@ -68,13 +68,5 @@ export function useSpeechRecognition() {
 
   const getLastTranscript = useCallback(() => transcriptRef.current, []);
 
-  return {
-    transcript,
-    isListening,
-    isSupported,
-    error,
-    startListening,
-    stopListening,
-    getLastTranscript,
-  };
+  return { transcript, isListening, isSupported, error, startListening, stopListening, getLastTranscript };
 }

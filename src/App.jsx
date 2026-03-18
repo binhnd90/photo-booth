@@ -2,67 +2,70 @@ import { useState } from 'react';
 import HomeScreen from './components/HomeScreen';
 import TranslatorScreen from './components/TranslatorScreen';
 import AvatarConfigScreen from './components/AvatarConfigScreen';
-import { DEFAULT_AVATAR } from './utils/avatarPresets';
+import { DEFAULT_AVATAR1, DEFAULT_AVATAR2 } from './utils/avatarPresets';
 import { useTranslation } from './hooks/useTranslation';
 
-const STORAGE_KEY = 'vt-avatar-config';
+const KEY1 = 'vt-avatar1';
+const KEY2 = 'vt-avatar2';
 
-function loadSavedAvatar() {
+function load(key, def) {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? { ...DEFAULT_AVATAR, ...JSON.parse(saved) } : DEFAULT_AVATAR;
+    const s = localStorage.getItem(key);
+    return s ? { ...def, ...JSON.parse(s) } : def;
   } catch {
-    return DEFAULT_AVATAR;
+    return def;
   }
 }
 
 function App() {
   const [screen, setScreen] = useState('HOME'); // HOME | TRANSLATOR | AVATAR_CONFIG
   const [prevScreen, setPrevScreen] = useState('HOME');
-  const [avatarConfig, setAvatarConfig] = useState(loadSavedAvatar);
+  const [avatar1, setAvatar1] = useState(() => load(KEY1, DEFAULT_AVATAR1));
+  const [avatar2, setAvatar2] = useState(() => load(KEY2, DEFAULT_AVATAR2));
 
-  // Load translation model at app level so it starts immediately
+  // Pre-load both translation models at app startup
   const translation = useTranslation();
 
-  const goTo = (s) => {
-    setPrevScreen(screen);
-    setScreen(s);
-  };
+  const goTo = (s) => { setPrevScreen(screen); setScreen(s); };
 
-  const handleSaveAvatar = (config) => {
-    setAvatarConfig(config);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  const handleSaveAvatars = (a1, a2) => {
+    setAvatar1(a1);
+    setAvatar2(a2);
+    localStorage.setItem(KEY1, JSON.stringify(a1));
+    localStorage.setItem(KEY2, JSON.stringify(a2));
     setScreen(prevScreen === 'TRANSLATOR' ? 'TRANSLATOR' : 'HOME');
   };
 
-  const handleCancelAvatar = () => {
+  const handleCancelAvatars = () =>
     setScreen(prevScreen === 'TRANSLATOR' ? 'TRANSLATOR' : 'HOME');
-  };
 
   return (
     <div className="app">
       {screen === 'HOME' && (
         <HomeScreen
-          avatarConfig={avatarConfig}
+          avatar1={avatar1}
+          avatar2={avatar2}
           onStart={() => goTo('TRANSLATOR')}
-          onConfigureAvatar={() => goTo('AVATAR_CONFIG')}
+          onConfigureAvatars={() => goTo('AVATAR_CONFIG')}
         />
       )}
 
       {screen === 'TRANSLATOR' && (
         <TranslatorScreen
-          avatarConfig={avatarConfig}
+          avatar1={avatar1}
+          avatar2={avatar2}
           translation={translation}
           onBack={() => setScreen('HOME')}
-          onConfigureAvatar={() => goTo('AVATAR_CONFIG')}
+          onConfigureAvatars={() => goTo('AVATAR_CONFIG')}
         />
       )}
 
       {screen === 'AVATAR_CONFIG' && (
         <AvatarConfigScreen
-          currentConfig={avatarConfig}
-          onSave={handleSaveAvatar}
-          onCancel={handleCancelAvatar}
+          avatar1={avatar1}
+          avatar2={avatar2}
+          onSave={handleSaveAvatars}
+          onCancel={handleCancelAvatars}
         />
       )}
     </div>

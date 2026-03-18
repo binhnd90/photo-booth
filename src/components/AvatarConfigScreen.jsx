@@ -3,15 +3,20 @@ import Avatar from './Avatar';
 import { AVATAR_PRESETS } from '../utils/avatarPresets';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 
-export default function AvatarConfigScreen({ currentConfig, onSave, onCancel }) {
-  const [config, setConfig] = useState({ ...currentConfig });
-  const { voices } = useSpeechSynthesis();
+export default function AvatarConfigScreen({ avatar1, avatar2, onSave, onCancel }) {
+  const [tab, setTab] = useState(1); // 1 = VI avatar, 2 = EN avatar
+  const [cfg1, setCfg1] = useState({ ...avatar1 });
+  const [cfg2, setCfg2] = useState({ ...avatar2 });
 
-  const update = (patch) => setConfig((c) => ({ ...c, ...patch }));
+  const { voicesFor } = useSpeechSynthesis();
 
-  const handlePresetSelect = (preset) => {
-    update({ emoji: preset.emoji, bgColor: preset.bgColor, imageUrl: null });
-  };
+  const cfg = tab === 1 ? cfg1 : cfg2;
+  const setcfg = tab === 1 ? setCfg1 : setCfg2;
+  const update = (patch) => setcfg((c) => ({ ...c, ...patch }));
+
+  const voiceList = voicesFor(cfg.lang || (tab === 1 ? 'vi' : 'en'));
+
+  const handlePreset = (preset) => update({ emoji: preset.emoji, bgColor: preset.bgColor, imageUrl: null });
 
   const handleImageUpload = (e) => {
     const file = e.target.files[0];
@@ -25,20 +30,38 @@ export default function AvatarConfigScreen({ currentConfig, onSave, onCancel }) 
     <div className="config-screen">
       {/* Header */}
       <div className="config-header">
-        <button className="icon-btn" onClick={onCancel} aria-label="Cancel">
+        <button className="icon-btn" onClick={onCancel}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
             <path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z" />
           </svg>
         </button>
-        <h2 className="config-title">Customize Avatar</h2>
-        <button className="save-btn" onClick={() => onSave(config)}>
-          Save
+        <h2 className="config-title">Customize Avatars</h2>
+        <button className="save-btn" onClick={() => onSave(cfg1, cfg2)}>Save</button>
+      </div>
+
+      {/* Avatar tabs */}
+      <div className="avatar-tabs">
+        <button
+          className={`avatar-tab ${tab === 1 ? 'avatar-tab--active' : ''}`}
+          onClick={() => setTab(1)}
+        >
+          <span>{cfg1.emoji}</span>
+          <span>{cfg1.name}</span>
+          <span className="tab-lang">🇻🇳 VI</span>
+        </button>
+        <button
+          className={`avatar-tab ${tab === 2 ? 'avatar-tab--active' : ''}`}
+          onClick={() => setTab(2)}
+        >
+          <span>{cfg2.emoji}</span>
+          <span>{cfg2.name}</span>
+          <span className="tab-lang">🇺🇸 EN</span>
         </button>
       </div>
 
       {/* Live preview */}
       <div className="config-preview">
-        <Avatar config={config} state="idle" />
+        <Avatar config={cfg} state="idle" />
       </div>
 
       {/* Name */}
@@ -46,22 +69,22 @@ export default function AvatarConfigScreen({ currentConfig, onSave, onCancel }) 
         <label className="config-label">Name</label>
         <input
           className="config-input"
-          value={config.name}
+          value={cfg.name}
           onChange={(e) => update({ name: e.target.value })}
           placeholder="Avatar name"
           maxLength={20}
         />
       </div>
 
-      {/* Preset avatars */}
+      {/* Preset grid */}
       <div className="config-section">
         <label className="config-label">Avatar Style</label>
         <div className="preset-grid">
           {AVATAR_PRESETS.map((preset) => (
             <button
               key={preset.id}
-              className={`preset-item ${config.emoji === preset.emoji && !config.imageUrl ? 'preset-item--selected' : ''}`}
-              onClick={() => handlePresetSelect(preset)}
+              className={`preset-item ${cfg.emoji === preset.emoji && !cfg.imageUrl ? 'preset-item--selected' : ''}`}
+              onClick={() => handlePreset(preset)}
               style={{ '--preset-bg': preset.bgColor }}
               title={preset.name}
             >
@@ -79,14 +102,14 @@ export default function AvatarConfigScreen({ currentConfig, onSave, onCancel }) 
           <input
             type="color"
             className="color-picker"
-            value={config.bgColor}
+            value={cfg.bgColor}
             onChange={(e) => update({ bgColor: e.target.value })}
           />
-          <span className="color-value">{config.bgColor}</span>
+          <span className="color-value">{cfg.bgColor}</span>
         </div>
       </div>
 
-      {/* Custom image */}
+      {/* Upload */}
       <div className="config-section">
         <label className="config-label">Custom Photo</label>
         <div className="upload-row">
@@ -94,44 +117,41 @@ export default function AvatarConfigScreen({ currentConfig, onSave, onCancel }) 
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
               <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z" />
             </svg>
-            Upload Image
+            Upload Photo
             <input type="file" accept="image/*" onChange={handleImageUpload} hidden />
           </label>
-          {config.imageUrl && (
-            <button className="btn-remove" onClick={() => update({ imageUrl: null })}>
-              Remove
-            </button>
+          {cfg.imageUrl && (
+            <button className="btn-remove" onClick={() => update({ imageUrl: null })}>Remove</button>
           )}
         </div>
       </div>
 
-      {/* Voice selector */}
+      {/* Voice */}
       <div className="config-section">
-        <label className="config-label">English Voice</label>
-        {voices.length === 0 ? (
-          <p className="config-hint">No voices available on this device.</p>
+        <label className="config-label">
+          Voice {tab === 1 ? '(Vietnamese 🇻🇳)' : '(English 🇺🇸)'}
+        </label>
+        {voiceList.length === 0 ? (
+          <p className="config-hint">No {tab === 1 ? 'Vietnamese' : 'English'} voices found on this device.</p>
         ) : (
           <select
             className="config-select"
-            value={config.voiceURI || ''}
+            value={cfg.voiceURI || ''}
             onChange={(e) => update({ voiceURI: e.target.value || null })}
           >
             <option value="">System default</option>
-            {voices.map((v) => (
+            {voiceList.map((v) => (
               <option key={v.voiceURI} value={v.voiceURI}>
                 {v.name} ({v.lang}){v.localService ? ' ★' : ''}
               </option>
             ))}
           </select>
         )}
-        <p className="config-hint">★ = local voice (works offline)</p>
+        <p className="config-hint">★ = local (works offline)</p>
       </div>
 
-      {/* Bottom save */}
       <div className="config-footer">
-        <button className="btn-primary" onClick={() => onSave(config)}>
-          Save Changes
-        </button>
+        <button className="btn-primary" onClick={() => onSave(cfg1, cfg2)}>Save Changes</button>
       </div>
     </div>
   );
