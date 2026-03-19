@@ -1,51 +1,103 @@
 import { useState, useRef, useEffect } from 'react';
-import { TOPICS, LEVELS, useClaudeConversation } from '../hooks/useClaudeConversation';
+import { BUILTIN_TOPICS, LEVELS, PROVIDERS, useAIConversation } from '../hooks/useAIConversation';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import TopicSelector from './TopicSelector';
 import FeedbackPanel from './FeedbackPanel';
 
-// ── API Key setup screen ──────────────────────────────────────────────────
-function ApiKeySetup({ onSave }) {
-  const [key, setKey] = useState('');
+// ── Provider setup screen ────────────────────────────────────────────────
+function ProviderSetup({ settings, currentProvider, currentApiKey, onSetProvider, onSetKey, onDone }) {
+  const [keyInput, setKeyInput] = useState(currentApiKey);
+
+  // Sync when provider changes
+  useEffect(() => setKeyInput(currentApiKey), [currentApiKey]);
+
+  const valid = keyInput.trim().length > 10;
+
   return (
-    <div className="apikey-screen">
-      <div className="apikey-icon">🔑</div>
-      <h2 className="apikey-title">Cần API Key</h2>
-      <p className="apikey-desc">
-        Chế độ luyện nói dùng Claude AI.<br />
-        Nhập Anthropic API key của bạn để bắt đầu.
-      </p>
-      <a
-        href="https://console.anthropic.com/settings/keys"
-        target="_blank"
-        rel="noreferrer"
-        className="apikey-link"
-      >
-        Lấy API key miễn phí →
-      </a>
-      <input
-        className="config-input apikey-input"
-        type="password"
-        placeholder="sk-ant-api03-..."
-        value={key}
-        onChange={(e) => setKey(e.target.value)}
-        onKeyDown={(e) => e.key === 'Enter' && key.startsWith('sk-') && onSave(key)}
-      />
+    <div className="provider-setup">
+      <div className="provider-setup-icon">🤖</div>
+      <h2 className="provider-setup-title">Chọn AI Provider</h2>
+      <p className="provider-setup-desc">Nhập API key để bắt đầu luyện nói tiếng Anh với AI.</p>
+
+      {/* Provider tabs */}
+      <div className="provider-tabs">
+        {PROVIDERS.map((p) => {
+          const hasKey = !!settings.keys[p.id];
+          return (
+            <button
+              key={p.id}
+              className={`provider-tab ${settings.providerId === p.id ? 'provider-tab--active' : ''}`}
+              onClick={() => onSetProvider(p.id)}
+            >
+              <span>{p.logo}</span>
+              <span className="provider-tab-name">{p.name}</span>
+              {hasKey && <span className="provider-tab-check">✓</span>}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Key input for selected provider */}
+      <div className="provider-key-box">
+        <div className="provider-key-header">
+          <span>{currentProvider.logo} {currentProvider.vendor} API Key</span>
+          <a href={currentProvider.docsUrl} target="_blank" rel="noreferrer" className="apikey-link">
+            Lấy key →
+          </a>
+        </div>
+        <input
+          className="config-input"
+          type="password"
+          placeholder={currentProvider.keyHint}
+          value={keyInput}
+          onChange={(e) => setKeyInput(e.target.value)}
+          onKeyDown={(e) => e.key === 'Enter' && valid && onSetKey(keyInput)}
+          autoComplete="off"
+        />
+        <button
+          className="btn-primary provider-key-save"
+          disabled={!valid}
+          onClick={() => onSetKey(keyInput)}
+        >
+          Lưu key {currentProvider.name}
+        </button>
+      </div>
+
+      {/* Show configured providers */}
+      {Object.keys(settings.keys).filter((k) => settings.keys[k]).length > 0 && (
+        <div className="provider-configured">
+          <p className="config-label">Đã cấu hình:</p>
+          <div className="provider-configured-list">
+            {PROVIDERS.filter((p) => settings.keys[p.id]).map((p) => (
+              <div
+                key={p.id}
+                className={`provider-configured-item ${settings.providerId === p.id ? 'provider-configured-item--active' : ''}`}
+                onClick={() => onSetProvider(p.id)}
+              >
+                {p.logo} {p.name}
+                {settings.providerId === p.id && <span className="provider-active-dot" />}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <button
         className="btn-primary"
-        disabled={!key.startsWith('sk-')}
-        onClick={() => onSave(key)}
+        disabled={!settings.keys[settings.providerId]}
+        onClick={onDone}
+        style={{ marginTop: 8 }}
       >
-        Xác nhận & Bắt đầu
+        Tiếp tục →
       </button>
-      <p className="apikey-note">Key được lưu trên thiết bị, không gửi đi nơi khác.</p>
+      <p className="apikey-note">Key lưu trên thiết bị, không gửi đi nơi khác ngoài API.</p>
     </div>
   );
 }
 
-// ── Chat message bubble ───────────────────────────────────────────────────
-function PracticeBubble({ msg, onFeedbackToggle, showFeedback }) {
+// ── Chat bubble ──────────────────────────────────────────────────────────
+function PracticeBubble({ msg, showFeedback, onFeedbackToggle }) {
   const isUser = msg.role === 'user';
   return (
     <div className={`pb-row ${isUser ? 'pb-row--user' : 'pb-row--ai'}`}>
@@ -62,12 +114,8 @@ function PracticeBubble({ msg, onFeedbackToggle, showFeedback }) {
               <span
                 className="pb-score-chip"
                 style={{
-                  background:
-                    msg.feedback.score >= 80 ? '#43e97b22' :
-                    msg.feedback.score >= 60 ? '#f9c74f22' : '#f7258522',
-                  color:
-                    msg.feedback.score >= 80 ? '#43e97b' :
-                    msg.feedback.score >= 60 ? '#f9c74f' : '#f72585',
+                  background: msg.feedback.score >= 80 ? '#43e97b22' : msg.feedback.score >= 60 ? '#f9c74f22' : '#f7258522',
+                  color:      msg.feedback.score >= 80 ? '#43e97b'   : msg.feedback.score >= 60 ? '#f9c74f'   : '#f72585',
                 }}
               >
                 {msg.feedback.score}/100
@@ -82,18 +130,24 @@ function PracticeBubble({ msg, onFeedbackToggle, showFeedback }) {
   );
 }
 
-// ── Main Practice Screen ──────────────────────────────────────────────────
+// ── Main ─────────────────────────────────────────────────────────────────
 export default function PracticeScreen({ onBack }) {
-  const [phase, setPhase] = useState('setup'); // setup | chat
-  const [selectedTopic, setSelectedTopic] = useState(TOPICS[0]);
+  const [phase, setPhase] = useState('setup'); // 'provider' | 'setup' | 'chat'
+  const [selectedTopic, setSelectedTopic] = useState(BUILTIN_TOPICS[0]);
   const [selectedLevel, setSelectedLevel] = useState(LEVELS[1]);
-  const [openFeedbacks, setOpenFeedbacks] = useState({}); // msgIndex -> bool
+  const [openFeedbacks, setOpenFeedbacks] = useState({});
   const [inputText, setInputText] = useState('');
   const chatEndRef = useRef(null);
 
-  const conv = useClaudeConversation();
+  const conv = useAIConversation();
   const speech = useSpeechRecognition('en-US');
   const { speak, stopSpeaking } = useSpeechSynthesis();
+
+  // Decide initial phase
+  useEffect(() => {
+    if (!conv.currentApiKey) setPhase('provider');
+    else setPhase('setup');
+  }, []); // eslint-disable-line
 
   // Auto-scroll
   useEffect(() => {
@@ -116,17 +170,15 @@ export default function PracticeScreen({ onBack }) {
     }
   }, [speech.isListening]); // eslint-disable-line
 
-  // Speak AI replies automatically
+  // Speak AI replies
   useEffect(() => {
     if (conv.messages.length === 0) return;
     const last = conv.messages[conv.messages.length - 1];
-    if (last.role === 'assistant' && last.content) {
-      speak(last.content, 'en-US', null);
-    }
+    if (last.role === 'assistant' && last.content) speak(last.content, 'en-US', null);
   }, [conv.messages.length]); // eslint-disable-line
 
   const handleStart = async () => {
-    await conv.startConversation(selectedTopic, selectedLevel);
+    await conv.startConversation(selectedTopic);
     setOpenFeedbacks({});
     setPhase('chat');
   };
@@ -139,11 +191,13 @@ export default function PracticeScreen({ onBack }) {
     await conv.sendMessage(t, selectedTopic, selectedLevel);
   };
 
-  const toggleFeedback = (idx) =>
-    setOpenFeedbacks((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  const handleSaveKey = (key) => {
+    conv.setApiKey(key);
+    setPhase('setup');
+  };
 
-  // ── API key gate ──
-  if (!conv.apiKey) {
+  // ── Provider screen ──
+  if (phase === 'provider') {
     return (
       <div className="practice-screen">
         <div className="practice-header">
@@ -155,7 +209,16 @@ export default function PracticeScreen({ onBack }) {
           <span className="practice-title">🎓 Luyện Nói Tiếng Anh</span>
           <div style={{ width: 40 }} />
         </div>
-        <ApiKeySetup onSave={conv.saveApiKey} />
+        <div style={{ flex: 1, overflowY: 'auto', padding: '0 14px 20px' }}>
+          <ProviderSetup
+            settings={conv.settings}
+            currentProvider={conv.currentProvider}
+            currentApiKey={conv.currentApiKey}
+            onSetProvider={conv.setProvider}
+            onSetKey={handleSaveKey}
+            onDone={() => setPhase('setup')}
+          />
+        </div>
       </div>
     );
   }
@@ -171,22 +234,15 @@ export default function PracticeScreen({ onBack }) {
             </svg>
           </button>
           <span className="practice-title">🎓 Luyện Nói Tiếng Anh</span>
-          <button
-            className="action-btn"
-            onClick={() => conv.saveApiKey('')}
-            title="Change API key"
-          >
-            🔑
+          <button className="provider-badge-btn" onClick={() => setPhase('provider')} title="Đổi AI provider">
+            {conv.currentProvider.logo} {conv.currentProvider.name}
           </button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '0 14px 20px' }}>
           <TopicSelector
             selectedTopic={selectedTopic}
             selectedLevel={selectedLevel}
-            onSelect={(t, l) => {
-              if (t) setSelectedTopic(t);
-              if (l) setSelectedLevel(l);
-            }}
+            onSelect={(t, l) => { if (t) setSelectedTopic(t); if (l) setSelectedLevel(l); }}
             onStart={handleStart}
           />
         </div>
@@ -194,10 +250,9 @@ export default function PracticeScreen({ onBack }) {
     );
   }
 
-  // ── Chat phase ──
+  // ── Chat ──
   return (
     <div className="practice-screen">
-      {/* Header */}
       <div className="practice-header">
         <button className="icon-btn" onClick={() => { conv.resetConversation(); setPhase('setup'); }}>
           <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
@@ -209,40 +264,37 @@ export default function PracticeScreen({ onBack }) {
           <span className="practice-topic-name">{selectedTopic.name}</span>
           <span className="practice-level-chip">{selectedLevel.label}</span>
         </div>
-        <button
-          className="action-btn"
-          onClick={() => conv.saveApiKey('')}
-          title="Change API key"
-        >
-          🔑
+        <button className="provider-badge-btn" onClick={() => setPhase('provider')} title="Đổi AI">
+          {conv.currentProvider.logo}
         </button>
       </div>
 
-      {/* Chat area */}
       <div className="practice-chat">
         {conv.messages.map((msg, idx) => (
           <PracticeBubble
             key={idx}
             msg={msg}
             showFeedback={!!openFeedbacks[idx]}
-            onFeedbackToggle={() => toggleFeedback(idx)}
+            onFeedbackToggle={() => setOpenFeedbacks((p) => ({ ...p, [idx]: !p[idx] }))}
           />
         ))}
         {conv.isLoading && (
           <div className="pb-row pb-row--ai">
             <div className="pb-avatar">🤖</div>
-            <div className="pb-bubble pb-bubble--ai pb-thinking">
-              <span /><span /><span />
-            </div>
+            <div className="pb-bubble pb-bubble--ai pb-thinking"><span /><span /><span /></div>
           </div>
         )}
         {conv.error && (
-          <div className="practice-error">⚠️ {conv.error}</div>
+          <div className="practice-error">
+            ⚠️ {conv.error}
+            <button className="practice-error-switch" onClick={() => setPhase('provider')}>
+              Đổi provider →
+            </button>
+          </div>
         )}
         <div ref={chatEndRef} />
       </div>
 
-      {/* Input bar */}
       <div className="practice-input-bar">
         <input
           className="practice-input"
@@ -256,7 +308,7 @@ export default function PracticeScreen({ onBack }) {
           className={`practice-mic-btn ${speech.isListening ? 'practice-mic-btn--active' : ''}`}
           onClick={() => speech.isListening ? speech.stopListening() : speech.startListening()}
           disabled={conv.isLoading}
-          title={speech.isListening ? 'Stop recording' : 'Speak in English'}
+          title={speech.isListening ? 'Stop' : 'Speak English'}
         >
           {speech.isListening ? '⏹' : '🎤'}
         </button>
