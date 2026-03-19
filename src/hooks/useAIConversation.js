@@ -12,6 +12,7 @@ export const PROVIDERS = [
     keyHint: 'sk-ant-api03-…',
     keyPrefix: 'sk-ant',
     docsUrl: 'https://console.anthropic.com/settings/keys',
+    requiresKey: true,
   },
   {
     id: 'openai',
@@ -23,6 +24,7 @@ export const PROVIDERS = [
     keyHint: 'sk-proj-…',
     keyPrefix: 'sk-',
     docsUrl: 'https://platform.openai.com/api-keys',
+    requiresKey: true,
   },
   {
     id: 'gemini',
@@ -34,6 +36,18 @@ export const PROVIDERS = [
     keyHint: 'AIzaSy…',
     keyPrefix: 'AIza',
     docsUrl: 'https://aistudio.google.com/app/apikey',
+    requiresKey: true,
+  },
+  {
+    id: 'local',
+    name: 'Local',
+    vendor: 'Ollama',
+    logo: '🖥️',
+    models: ['llama3.2', 'llama3.1', 'mistral', 'gemma3', 'qwen2.5', 'phi4'],
+    defaultModel: 'llama3.2',
+    defaultBaseUrl: 'http://localhost:11434',
+    docsUrl: 'https://ollama.com',
+    requiresKey: false,
   },
 ];
 
@@ -196,11 +210,25 @@ async function callGemini(apiKey, model, systemPrompt, history) {
   return data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
 }
 
-async function callProvider(providerId, apiKey, model, systemPrompt, history) {
+async function callOllama(baseUrl, model, systemPrompt, history) {
+  const url = `${baseUrl.replace(/\/$/, '')}/v1/chat/completions`;
+  const messages = [{ role: 'system', content: systemPrompt }, ...history];
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ model, messages, stream: false, max_tokens: 600 }),
+  });
+  const data = await resp.json();
+  if (!resp.ok) throw new Error(data.error?.message || `Ollama error ${resp.status}`);
+  return data.choices?.[0]?.message?.content ?? '';
+}
+
+async function callProvider(providerId, apiKey, model, systemPrompt, history, baseUrl) {
   switch (providerId) {
     case 'anthropic': return callAnthropic(apiKey, model, systemPrompt, history);
     case 'openai':    return callOpenAI(apiKey, model, systemPrompt, history);
     case 'gemini':    return callGemini(apiKey, model, systemPrompt, history);
+    case 'local':     return callOllama(baseUrl, model, systemPrompt, history);
     default: throw new Error(`Unknown provider: ${providerId}`);
   }
 }
@@ -230,6 +258,7 @@ export function useAIConversation() {
       providerId: s.providerId || 'anthropic',
       keys: s.keys || {},          // { anthropic: '...', openai: '...', gemini: '...' }
       models: s.models || {},      // { anthropic: '...', openai: '...', gemini: '...' }
+      baseUrls: s.baseUrls || {},  // { local: 'http://localhost:11434' }
     };
   });
 
@@ -246,6 +275,7 @@ export function useAIConversation() {
   const currentProvider = PROVIDERS.find((p) => p.id === settings.providerId) || PROVIDERS[0];
   const currentApiKey = settings.keys[settings.providerId] || '';
   const currentModel = settings.models[settings.providerId] || currentProvider.defaultModel;
+  const currentBaseUrl = settings.baseUrls[settings.providerId] || currentProvider.defaultBaseUrl || '';
 
   const setApiKey = useCallback((key) => {
     updateSettings({ keys: { ...loadSettings().keys, [settings.providerId]: key.trim() } });
@@ -258,6 +288,10 @@ export function useAIConversation() {
 
   const setModel = useCallback((model) => {
     updateSettings({ models: { ...loadSettings().models, [settings.providerId]: model } });
+  }, [settings.providerId, updateSettings]);
+
+  const setBaseUrl = useCallback((url) => {
+    updateSettings({ baseUrls: { ...loadSettings().baseUrls, [settings.providerId]: url.trim() } });
   }, [settings.providerId, updateSettings]);
 
   const startConversation = useCallback(async (topic) => {
@@ -283,6 +317,7 @@ export function useAIConversation() {
         currentModel,
         buildSystemPrompt(topic, level),
         historyRef.current,
+        currentBaseUrl,
       );
 
       let parsed;
@@ -311,8 +346,8 @@ export function useAIConversation() {
 
   return {
     messages, isLoading, error,
-    settings, currentProvider, currentApiKey, currentModel,
-    setApiKey, setProvider, setModel,
+    settings, currentProvider, currentApiKey, currentModel, currentBaseUrl,
+    setApiKey, setProvider, setModel, setBaseUrl,
     startConversation, sendMessage, resetConversation,
   };
 }

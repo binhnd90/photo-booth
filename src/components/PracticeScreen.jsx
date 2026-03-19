@@ -6,24 +6,46 @@ import TopicSelector from './TopicSelector';
 import FeedbackPanel from './FeedbackPanel';
 
 // ── Provider setup screen ────────────────────────────────────────────────
-function ProviderSetup({ settings, currentProvider, currentApiKey, onSetProvider, onSetKey, onDone }) {
+function ProviderSetup({ settings, currentProvider, currentApiKey, currentBaseUrl, onSetProvider, onSetKey, onSetBaseUrl, onDone }) {
   const [keyInput, setKeyInput] = useState(currentApiKey);
+  const [urlInput, setUrlInput] = useState(currentBaseUrl || currentProvider.defaultBaseUrl || '');
 
   // Sync when provider changes
-  useEffect(() => setKeyInput(currentApiKey), [currentApiKey]);
+  useEffect(() => {
+    setKeyInput(currentApiKey);
+    setUrlInput(currentBaseUrl || currentProvider.defaultBaseUrl || '');
+  }, [currentApiKey, currentBaseUrl, currentProvider]);
 
-  const valid = keyInput.trim().length > 10;
+  const isLocal = !currentProvider.requiresKey;
+  const validKey = keyInput.trim().length > 10;
+  const validUrl = urlInput.trim().length > 0;
+  const canSave = isLocal ? validUrl : validKey;
+  const isReady = isLocal
+    ? true // local always ready with default URL
+    : !!settings.keys[settings.providerId];
+
+  const handleSave = () => {
+    if (isLocal) {
+      onSetBaseUrl(urlInput || currentProvider.defaultBaseUrl);
+    } else {
+      onSetKey(keyInput);
+    }
+  };
 
   return (
     <div className="provider-setup">
       <div className="provider-setup-icon">🤖</div>
-      <h2 className="provider-setup-title">Chọn AI Provider</h2>
-      <p className="provider-setup-desc">Nhập API key để bắt đầu luyện nói tiếng Anh với AI.</p>
+      <h2 className="provider-setup-title">Choose AI Provider</h2>
+      <p className="provider-setup-desc">
+        {isLocal
+          ? 'Run AI locally with Ollama — no API key needed.'
+          : 'Enter your API key to start English speaking practice.'}
+      </p>
 
       {/* Provider tabs */}
       <div className="provider-tabs">
         {PROVIDERS.map((p) => {
-          const hasKey = !!settings.keys[p.id];
+          const hasKey = p.requiresKey === false ? true : !!settings.keys[p.id];
           return (
             <button
               key={p.id}
@@ -38,38 +60,63 @@ function ProviderSetup({ settings, currentProvider, currentApiKey, onSetProvider
         })}
       </div>
 
-      {/* Key input for selected provider */}
+      {/* Config input for selected provider */}
       <div className="provider-key-box">
-        <div className="provider-key-header">
-          <span>{currentProvider.logo} {currentProvider.vendor} API Key</span>
-          <a href={currentProvider.docsUrl} target="_blank" rel="noreferrer" className="apikey-link">
-            Lấy key →
-          </a>
-        </div>
-        <input
-          className="config-input"
-          type="password"
-          placeholder={currentProvider.keyHint}
-          value={keyInput}
-          onChange={(e) => setKeyInput(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && valid && onSetKey(keyInput)}
-          autoComplete="off"
-        />
+        {isLocal ? (
+          <>
+            <div className="provider-key-header">
+              <span>{currentProvider.logo} Ollama Base URL</span>
+              <a href={currentProvider.docsUrl} target="_blank" rel="noreferrer" className="apikey-link">
+                Install Ollama →
+              </a>
+            </div>
+            <input
+              className="config-input"
+              type="text"
+              placeholder={currentProvider.defaultBaseUrl}
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              autoComplete="off"
+            />
+            <p className="apikey-note" style={{ marginTop: 6 }}>
+              Make sure Ollama is running locally. Default: {currentProvider.defaultBaseUrl}
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="provider-key-header">
+              <span>{currentProvider.logo} {currentProvider.vendor} API Key</span>
+              <a href={currentProvider.docsUrl} target="_blank" rel="noreferrer" className="apikey-link">
+                Get key →
+              </a>
+            </div>
+            <input
+              className="config-input"
+              type="password"
+              placeholder={currentProvider.keyHint}
+              value={keyInput}
+              onChange={(e) => setKeyInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && validKey && onSetKey(keyInput)}
+              autoComplete="off"
+            />
+          </>
+        )}
         <button
           className="btn-primary provider-key-save"
-          disabled={!valid}
-          onClick={() => onSetKey(keyInput)}
+          disabled={!canSave}
+          onClick={handleSave}
         >
-          Lưu key {currentProvider.name}
+          {isLocal ? `Save URL` : `Save ${currentProvider.name} key`}
         </button>
       </div>
 
       {/* Show configured providers */}
-      {Object.keys(settings.keys).filter((k) => settings.keys[k]).length > 0 && (
+      {(Object.keys(settings.keys).filter((k) => settings.keys[k]).length > 0 || true) && (
         <div className="provider-configured">
-          <p className="config-label">Đã cấu hình:</p>
+          <p className="config-label">Available providers:</p>
           <div className="provider-configured-list">
-            {PROVIDERS.filter((p) => settings.keys[p.id]).map((p) => (
+            {PROVIDERS.filter((p) => p.requiresKey === false || settings.keys[p.id]).map((p) => (
               <div
                 key={p.id}
                 className={`provider-configured-item ${settings.providerId === p.id ? 'provider-configured-item--active' : ''}`}
@@ -85,13 +132,15 @@ function ProviderSetup({ settings, currentProvider, currentApiKey, onSetProvider
 
       <button
         className="btn-primary"
-        disabled={!settings.keys[settings.providerId]}
+        disabled={!isReady}
         onClick={onDone}
         style={{ marginTop: 8 }}
       >
-        Tiếp tục →
+        Continue →
       </button>
-      <p className="apikey-note">Key lưu trên thiết bị, không gửi đi nơi khác ngoài API.</p>
+      <p className="apikey-note">
+        {isLocal ? 'Runs entirely on your device — no data sent to the cloud.' : 'Key stored on device only, never sent anywhere except the API.'}
+      </p>
     </div>
   );
 }
@@ -145,7 +194,8 @@ export default function PracticeScreen({ onBack }) {
 
   // Decide initial phase
   useEffect(() => {
-    if (!conv.currentApiKey) setPhase('provider');
+    const isLocal = !conv.currentProvider.requiresKey;
+    if (!isLocal && !conv.currentApiKey) setPhase('provider');
     else setPhase('setup');
   }, []); // eslint-disable-line
 
@@ -196,6 +246,11 @@ export default function PracticeScreen({ onBack }) {
     setPhase('setup');
   };
 
+  const handleSaveBaseUrl = (url) => {
+    conv.setBaseUrl(url);
+    setPhase('setup');
+  };
+
   // ── Provider screen ──
   if (phase === 'provider') {
     return (
@@ -214,8 +269,10 @@ export default function PracticeScreen({ onBack }) {
             settings={conv.settings}
             currentProvider={conv.currentProvider}
             currentApiKey={conv.currentApiKey}
+            currentBaseUrl={conv.currentBaseUrl}
             onSetProvider={conv.setProvider}
             onSetKey={handleSaveKey}
+            onSetBaseUrl={handleSaveBaseUrl}
             onDone={() => setPhase('setup')}
           />
         </div>
