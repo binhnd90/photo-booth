@@ -798,3 +798,174 @@ input, select, textarea { font-family: inherit; }
 
 @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slide-up { from { transform: translateY(40px); } to { transform: translateY(0); } }
+
+/* ══════════════════════════════════════════════════════════════
+   NOTEBOOKLM VOICE MODE
+══════════════════════════════════════════════════════════════ */
+
+/* Home card (reuses practice-home-card-left / practice-home-title etc.) */
+.nblm-home-card {
+  width: 100%; display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 18px; border-radius: var(--radius);
+  background: linear-gradient(135deg, rgba(255,153,0,0.12), rgba(124,110,247,0.14));
+  border: 1px solid rgba(255,153,0,0.28);
+  text-align: left; gap: 12px; transition: all var(--transition);
+}
+.nblm-home-card:hover {
+  background: linear-gradient(135deg, rgba(255,153,0,0.18), rgba(124,110,247,0.22));
+  transform: translateY(-1px);
+}
+.nblm-home-arrow { font-size: 1.3rem; color: #ff9a3c; font-weight: 700; flex-shrink: 0; }
+
+/* Setup phase */
+.nblm-setup {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 14px; padding: 24px 0 20px; text-align: center;
+}
+.nblm-setup-icon { font-size: 2.8rem; }
+.nblm-setup-title { font-size: 1.2rem; font-weight: 800; }
+.nblm-setup-desc { font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; }
+
+.nblm-field {
+  width: 100%; display: flex; flex-direction: column; gap: 6px;
+  text-align: left; background: var(--bg-card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 12px 14px;
+}
+.nblm-label {
+  font-size: 0.72rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-muted);
+}
+.nblm-hint {
+  font-size: 0.72rem; color: var(--text-dim); line-height: 1.5;
+}
+.nblm-hint code {
+  background: rgba(255,255,255,0.06); border-radius: 4px;
+  padding: 1px 4px; font-size: 0.72rem;
+}
+.nblm-continue { width: 100%; margin-top: 4px; }
+
+/* Login phase */
+.nblm-login {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: center; gap: 14px; padding: 32px 24px; text-align: center;
+}
+.nblm-login-icon { font-size: 3rem; }
+.nblm-login-title { font-size: 1.3rem; font-weight: 800; }
+.nblm-login-desc { font-size: 0.88rem; color: var(--text-muted); line-height: 1.6; }
+.nblm-google-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  background: #fff; color: #1f1f1f;
+  font-size: 0.95rem; font-weight: 600;
+  padding: 12px 22px; border-radius: 50px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.nblm-google-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.35);
+}
+
+/* Notebook picker */
+.nblm-picker { display: flex; flex-direction: column; gap: 12px; padding-top: 16px; }
+.nblm-picker-header {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.nblm-picker-title {
+  font-size: 0.78rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.6px; color: var(--text-muted);
+}
+
+.nblm-empty {
+  text-align: center; padding: 28px 20px;
+  color: var(--text-muted); font-size: 0.88rem;
+  background: var(--bg-card); border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  display: flex; flex-direction: column; gap: 6px; align-items: center;
+}
+.nblm-empty-icon { font-size: 2.2rem; }
+.nblm-empty-hint { font-size: 0.78rem; color: var(--text-dim); }
+
+.nblm-list { display: flex; flex-direction: column; gap: 10px; }
+.nblm-card {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; border-radius: var(--radius-sm);
+  background: var(--bg-card); border: 1px solid var(--border);
+  text-align: left; transition: all var(--transition);
+}
+.nblm-card:hover {
+  border-color: #ff9a3c66; background: rgba(255,154,60,0.06);
+  transform: translateY(-1px);
+}
+.nblm-card-emoji {
+  font-size: 1.6rem; width: 40px; height: 40px; border-radius: 10px;
+  background: rgba(124,110,247,0.10); border: 1px solid rgba(124,110,247,0.25);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.nblm-card-body { flex: 1; min-width: 0; }
+.nblm-card-title {
+  font-size: 0.92rem; font-weight: 700;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.nblm-card-sub { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+.nblm-card-arrow { color: var(--text-dim); font-size: 1.1rem; }
+
+/* User avatar thumb in header */
+.nblm-avatar-img {
+  width: 20px; height: 20px; border-radius: 50%; object-fit: cover;
+  border: 1px solid var(--border);
+}
+
+/* Citations */
+.nblm-citations {
+  display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
+  padding-top: 6px; border-top: 1px dashed rgba(255,255,255,0.08);
+}
+.nblm-citation {
+  font-size: 0.68rem; color: var(--text-dim);
+  background: rgba(255,255,255,0.04); border-radius: 10px;
+  padding: 2px 7px;
+}
+
+/* Live "speaking" chip */
+.nblm-live-chip {
+  font-size: 0.62rem; color: #ff9a3c;
+  background: rgba(255,154,60,0.12); border: 1px solid rgba(255,154,60,0.3);
+  border-radius: 20px; padding: 2px 8px; font-weight: 600;
+  animation: nblm-pulse 1.2s ease-in-out infinite;
+}
+@keyframes nblm-pulse {
+  0%,100% { opacity: 0.6; }
+  50%     { opacity: 1; }
+}
+
+/* Upload-audio button in input bar */
+.nblm-upload-btn {
+  width: 42px; height: 42px; border-radius: 50%; flex-shrink: 0;
+  background: var(--bg-card); border: 1px solid var(--border);
+  font-size: 1.05rem; display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition); color: var(--text);
+}
+.nblm-upload-btn:hover:not(:disabled) { background: var(--bg-card-hover); border-color: #ff9a3c; }
+.nblm-upload-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.nblm-upload-btn--active {
+  background: rgba(247,37,133,0.15);
+  border-color: var(--accent);
+  color: var(--accent);
+  box-shadow: 0 0 14px rgba(247,37,133,0.35);
+}
+
+/* Recording banner */
+.nblm-recording-bar {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; margin: 0 12px 6px;
+  background: rgba(247,37,133,0.10); border: 1px solid rgba(247,37,133,0.3);
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem; color: var(--accent); font-weight: 600;
+  flex-shrink: 0;
+}
+.nblm-rec-dot {
+  width: 10px; height: 10px; border-radius: 50%; background: var(--accent);
+  animation: nblm-pulse 1s ease-in-out infinite;
+  flex-shrink: 0;
+}
+.nblm-rec-cancel { margin-left: auto; }
