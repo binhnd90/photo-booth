@@ -3,6 +3,7 @@ import HomeScreen from './components/HomeScreen';
 import TranslatorScreen from './components/TranslatorScreen';
 import AvatarConfigScreen from './components/AvatarConfigScreen';
 import PracticeScreen from './components/PracticeScreen';
+import NotebookLMScreen from './components/NotebookLMScreen';
 import { DEFAULT_AVATAR1, DEFAULT_AVATAR2 } from './utils/avatarPresets';
 import { useTranslation } from './hooks/useTranslation';
 
@@ -48,12 +49,17 @@ function App() {
           avatar2={avatar2}
           onStart={() => goTo('TRANSLATOR')}
           onPractice={() => goTo('PRACTICE')}
+          onNotebookLM={() => goTo('NOTEBOOKLM')}
           onConfigureAvatars={() => goTo('AVATAR_CONFIG')}
         />
       )}
 
       {screen === 'PRACTICE' && (
         <PracticeScreen onBack={() => setScreen('HOME')} />
+      )}
+
+      {screen === 'NOTEBOOKLM' && (
+        <NotebookLMScreen onBack={() => setScreen('HOME')} />
       )}
 
       {screen === 'TRANSLATOR' && (

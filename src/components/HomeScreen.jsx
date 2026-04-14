@@ -1,6 +1,6 @@
 import Avatar from './Avatar';
 
-export default function HomeScreen({ avatar1, avatar2, onStart, onPractice, onConfigureAvatars }) {
+export default function HomeScreen({ avatar1, avatar2, onStart, onPractice, onNotebookLM, onConfigureAvatars }) {
   return (
     <div className="home-screen">
       <header className="home-header">
@@ -48,6 +48,18 @@ export default function HomeScreen({ avatar1, avatar2, onStart, onPractice, onCo
             </div>
           </div>
           <span className="practice-home-arrow">→</span>
+        </button>
+
+        {/* NotebookLM voice mode */}
+        <button className="nblm-home-card" onClick={onNotebookLM}>
+          <div className="practice-home-card-left">
+            <span className="practice-home-icon">📓</span>
+            <div>
+              <div className="practice-home-title">NotebookLM Voice</div>
+              <div className="practice-home-sub">Talk to your Google notebooks · MCP bridge</div>
+            </div>
+          </div>
+          <span className="nblm-home-arrow">→</span>
         </button>
 
         <button className="btn-secondary" onClick={onConfigureAvatars}>
