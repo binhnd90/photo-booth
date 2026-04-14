@@ -45,8 +45,6 @@ function App() {
     <div className="app">
       {screen === 'HOME' && (
         <HomeScreen
-          avatar1={avatar1}
-          avatar2={avatar2}
           onStart={() => goTo('TRANSLATOR')}
           onPractice={() => goTo('PRACTICE')}
           onNotebookLM={() => goTo('NOTEBOOKLM')}

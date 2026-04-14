@@ -1,80 +1,62 @@
-import Avatar from './Avatar';
+import BrandLogo from './BrandLogo';
 
-export default function HomeScreen({ avatar1, avatar2, onStart, onPractice, onNotebookLM, onConfigureAvatars }) {
+export default function HomeScreen({ onStart, onPractice, onNotebookLM, onConfigureAvatars }) {
   return (
     <div className="home-screen">
-      <header className="home-header">
-        <h1 className="home-title">
-          Voice<span className="home-title-accent">Translate</span>
+      {/* Hero — chunky rounded brand wordmark */}
+      <div className="hero">
+        <BrandLogo size={72} className="hero-logo" />
+        <h1 className="hero-title">
+          <span className="hero-line">speak</span>
+          <span className="hero-line">English</span>
+          <span className="hero-line">with <span className="hero-ai">Ai</span></span>
         </h1>
-        <p className="home-subtitle">Real-time Bilingual Conversation</p>
-        <div className="home-badge">AI-Powered · On-Device</div>
-      </header>
-
-      {/* Two avatars preview */}
-      <div className="home-duo">
-        <div className="home-duo-side">
-          <Avatar config={avatar1} state="idle" />
-          <span className="home-duo-lang">🇻🇳 Vietnamese</span>
-        </div>
-
-        <div className="home-duo-vs">
-          <div className="home-duo-arrow">↔</div>
-          <div className="home-duo-label">translates</div>
-        </div>
-
-        <div className="home-duo-side">
-          <Avatar config={avatar2} state="idle" />
-          <span className="home-duo-lang">🇺🇸 English</span>
-        </div>
+        <p className="hero-sub">Luyện nói · Dịch thuật · Trò chuyện thông minh</p>
       </div>
 
+      {/* Actions */}
       <div className="home-actions">
-        <button className="btn-primary" onClick={onStart}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
-            <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
-          </svg>
-          Dịch VI ↔ EN
-        </button>
-
-        {/* Practice mode — prominent card */}
-        <button className="practice-home-card" onClick={onPractice}>
-          <div className="practice-home-card-left">
-            <span className="practice-home-icon">🎓</span>
-            <div>
-              <div className="practice-home-title">Luyện Nói Tiếng Anh</div>
-              <div className="practice-home-sub">AI conversation partner · Sửa lỗi ngữ pháp</div>
-            </div>
+        <button className="action-card action-card--primary" onClick={onPractice}>
+          <div className="action-card-icon">🎤</div>
+          <div className="action-card-body">
+            <div className="action-card-title">Luyện Nói Tiếng Anh</div>
+            <div className="action-card-sub">AI conversation · Sửa lỗi ngữ pháp</div>
           </div>
-          <span className="practice-home-arrow">→</span>
+          <span className="action-card-arrow">→</span>
         </button>
 
-        {/* NotebookLM voice mode */}
-        <button className="nblm-home-card" onClick={onNotebookLM}>
-          <div className="practice-home-card-left">
-            <span className="practice-home-icon">📓</span>
-            <div>
-              <div className="practice-home-title">NotebookLM Voice</div>
-              <div className="practice-home-sub">Talk to your Google notebooks · MCP bridge</div>
-            </div>
+        <button className="action-card action-card--blue" onClick={onStart}>
+          <div className="action-card-icon">🗣️</div>
+          <div className="action-card-body">
+            <div className="action-card-title">Dịch VI ↔ EN</div>
+            <div className="action-card-sub">Real-time bilingual translator</div>
           </div>
-          <span className="nblm-home-arrow">→</span>
+          <span className="action-card-arrow">→</span>
         </button>
 
-        <button className="btn-secondary" onClick={onConfigureAvatars}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" />
-          </svg>
-          Tuỳ chỉnh Avatar
+        <button className="action-card action-card--amber" onClick={onNotebookLM}>
+          <div className="action-card-icon">📓</div>
+          <div className="action-card-body">
+            <div className="action-card-title">NotebookLM Voice</div>
+            <div className="action-card-sub">Talk to your Google notebooks</div>
+          </div>
+          <span className="action-card-arrow">→</span>
+        </button>
+
+        <button className="action-card action-card--ghost" onClick={onConfigureAvatars}>
+          <div className="action-card-icon">🎨</div>
+          <div className="action-card-body">
+            <div className="action-card-title">Tuỳ chỉnh Avatar</div>
+            <div className="action-card-sub">Customize your speaker avatars</div>
+          </div>
+          <span className="action-card-arrow">→</span>
         </button>
       </div>
 
       <div className="home-features">
-        <div className="feature-chip">🎤 Voice input</div>
+        <div className="feature-chip">🎤 Voice</div>
         <div className="feature-chip">🔄 Bidirectional</div>
-        <div className="feature-chip">💾 Save history</div>
-        <div className="feature-chip">🤖 Claude AI</div>
+        <div className="feature-chip">🤖 Claude · GPT · Gemini</div>
       </div>
     </div>
   );
